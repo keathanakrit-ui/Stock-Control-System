@@ -3,11 +3,15 @@ import type { Product } from "../../models/product";
 type ProductTableProps = {
   products: Product[];
   onEdit: (product: Product) => void;
+  onDelete: (product: Product) => void;
+  deletingProductId: number | null;
 };
 
 function ProductTable({
   products,
   onEdit,
+  onDelete,
+  deletingProductId,
 }: ProductTableProps) {
   return (
     <div className="mt-8 overflow-hidden rounded-xl bg-white shadow">
@@ -17,7 +21,9 @@ function ProductTable({
             <th className="p-4 text-left">Product Code</th>
             <th className="p-4 text-left">Product Name</th>
             <th className="p-4 text-left">Category</th>
-            <th className="p-4 text-left">Qty</th>
+            <th className="p-4 text-left">Current Qty</th>
+            <th className="p-4 text-left">Min Qty</th>
+            <th className="p-4 text-left">Max Qty</th>
             <th className="p-4 text-left">Unit</th>
             <th className="p-4 text-center">Action</th>
           </tr>
@@ -30,17 +36,29 @@ function ProductTable({
               <td className="p-4">{product.product_name}</td>
               <td className="p-4">{product.category}</td>
               <td className="p-4">-</td>
+              <td className="p-4">{product.min_qty}</td>
+              <td className="p-4">{product.max_qty}</td>
               <td className="p-4">{product.unit}</td>
 
               <td className="p-4 text-center">
                 <button
+                  type="button"
                   onClick={() => onEdit(product)}
+                  disabled={deletingProductId === product.id}
                   className="mr-3"
+                  aria-label={`Edit ${product.product_name}`}
                 >
                   ✏️
                 </button>
 
-                <button>🗑</button>
+                <button
+                  type="button"
+                  onClick={() => onDelete(product)}
+                  disabled={deletingProductId === product.id}
+                  aria-label={`Delete ${product.product_name}`}
+                >
+                  {deletingProductId === product.id ? "..." : "🗑️"}
+                </button>
               </td>
             </tr>
           ))}

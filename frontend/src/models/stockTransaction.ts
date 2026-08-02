@@ -24,11 +24,22 @@ export interface StockTransactionRpcResult {
 export interface StockTransactionHistoryRow {
   id: number;
   product_id: number;
+  product_code: string;
+  product_name: string;
   transaction_type: StockTransactionType;
   quantity: number;
+  unit: string;
   transaction_at: string;
-  performed_by_user_id: string | null;
   performed_by_label: string;
   reference: string | null;
   note: string | null;
+}
+
+export type StockTransactionTypeFilter = "ALL" | StockTransactionType;
+
+export interface StockTransactionFilters {
+  search?: string;
+  transaction_type?: StockTransactionTypeFilter;
+  date_from?: string;
+  date_to?: string;
 }

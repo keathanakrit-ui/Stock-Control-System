@@ -4,14 +4,15 @@ import ProductForm from "../../components/product/ProductForm";
 import ProductTable from "../../components/product/ProductTable";
 import ProductToolbar from "../../components/product/ProductToolbar";
 import type { Product } from "../../models/product";
+import type { ProductStockSummary } from "../../models/stockTransaction";
 import {
   deleteProduct,
-  getProducts,
 } from "../../services/productService";
+import { getProductsWithStock } from "../../services/stockTransactionService";
 
 function ProductPage() {
   const [open, setOpen] = useState(false);
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<ProductStockSummary[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [search, setSearch] = useState("");
   const [deletingProductId, setDeletingProductId] = useState<number | null>(
@@ -24,7 +25,7 @@ function ProductPage() {
 
   async function loadProducts() {
     try {
-      const data = await getProducts();
+      const data = await getProductsWithStock();
       setProducts(data);
     } catch (error) {
       console.error(error);
@@ -45,7 +46,17 @@ function ProductPage() {
       await loadProducts();
     } catch (error) {
       console.error(error);
-      alert("Cannot delete product");
+      const isReferencedByTransactions =
+        typeof error === "object"
+        && error !== null
+        && "code" in error
+        && error.code === "23503";
+
+      alert(
+        isReferencedByTransactions
+          ? "This Product has stock transaction history and cannot be deleted."
+          : "Cannot delete product",
+      );
     } finally {
       setDeletingProductId(null);
     }

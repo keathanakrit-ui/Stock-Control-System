@@ -1,9 +1,9 @@
-import type { Product } from "../../models/product";
+import type { ProductStockSummary } from "../../models/stockTransaction";
 
 type ProductTableProps = {
-  products: Product[];
-  onEdit: (product: Product) => void;
-  onDelete: (product: Product) => void;
+  products: ProductStockSummary[];
+  onEdit: (product: ProductStockSummary) => void;
+  onDelete: (product: ProductStockSummary) => void;
   deletingProductId: number | null;
 };
 
@@ -35,7 +35,7 @@ function ProductTable({
               <td className="p-4">{product.product_code}</td>
               <td className="p-4">{product.product_name}</td>
               <td className="p-4">{product.category}</td>
-              <td className="p-4">-</td>
+              <td className="p-4">{product.current_qty}</td>
               <td className="p-4">{product.min_qty}</td>
               <td className="p-4">{product.max_qty}</td>
               <td className="p-4">{product.unit}</td>

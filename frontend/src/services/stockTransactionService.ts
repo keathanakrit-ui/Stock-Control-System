@@ -10,12 +10,18 @@ import type {
 
 type RawProductStockSummary = Omit<
   ProductStockSummary,
-  "id" | "product_id" | "min_qty" | "max_qty" | "current_qty"
+  | "id"
+  | "product_id"
+  | "min_qty"
+  | "max_qty"
+  | "current_qty"
+  | "last_movement_at"
 > & {
   product_id: unknown;
   min_qty: unknown;
   max_qty: unknown;
   current_qty: unknown;
+  last_movement_at: unknown;
 };
 
 type RawStockTransactionRpcResult = {
@@ -91,6 +97,12 @@ function normalizeTransactionDate(value: unknown): string {
   return value;
 }
 
+function normalizeOptionalTransactionDate(value: unknown): string | null {
+  if (value === null) return null;
+
+  return normalizeTransactionDate(value);
+}
+
 export async function getProductsWithStock(): Promise<ProductStockSummary[]> {
   const { data, error } = await supabase
     .from("product_stock_summary")
@@ -110,6 +122,9 @@ export async function getProductsWithStock(): Promise<ProductStockSummary[]> {
     min_qty: normalizeNumber(row.min_qty, "min_qty"),
     max_qty: normalizeNumber(row.max_qty, "max_qty"),
     current_qty: normalizeNumber(row.current_qty, "current_qty"),
+    last_movement_at: normalizeOptionalTransactionDate(
+      row.last_movement_at,
+    ),
   }));
 }
 

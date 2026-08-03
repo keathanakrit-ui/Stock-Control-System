@@ -5,6 +5,8 @@ import type {
   BarcodeLookupResult,
   CreateStockTransactionInput,
   ProductStockSummary,
+  ProductIdentifierLookupResult,
+  QrCodeLookupResult,
   StockTransactionFilters,
   StockTransactionHistoryRow,
   StockTransactionRpcResult,
@@ -146,19 +148,20 @@ export async function getProductsWithStock(): Promise<ProductStockSummary[]> {
     .sort((a, b) => a.product_code.localeCompare(b.product_code));
 }
 
-export async function lookupProductByBarcode(
-  scannedBarcode: string,
-): Promise<BarcodeLookupResult> {
-  const barcode = scannedBarcode.trim();
+async function lookupProductByIdentifier(
+  column: "barcode" | "qr_code",
+  scannedValue: string,
+): Promise<ProductIdentifierLookupResult> {
+  const identifier = scannedValue.trim();
 
-  if (!barcode) {
+  if (!identifier) {
     return { status: "not_found" };
   }
 
   const { data: productData, error: productError } = await supabase
     .from("products")
     .select("*")
-    .eq("barcode", barcode);
+    .eq(column, identifier);
 
   if (productError) {
     throw productError;
@@ -193,6 +196,18 @@ export async function lookupProductByBarcode(
     status: "found",
     product: productWithStock,
   };
+}
+
+export async function lookupProductByBarcode(
+  scannedBarcode: string,
+): Promise<BarcodeLookupResult> {
+  return lookupProductByIdentifier("barcode", scannedBarcode);
+}
+
+export async function lookupProductByQrCode(
+  scannedQrCode: string,
+): Promise<QrCodeLookupResult> {
+  return lookupProductByIdentifier("qr_code", scannedQrCode);
 }
 
 export async function createStockTransaction(

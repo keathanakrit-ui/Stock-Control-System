@@ -8,7 +8,7 @@ export interface ProductStockSummary extends Product {
   last_movement_at: string | null;
 }
 
-export type BarcodeLookupResult =
+export type ProductIdentifierLookupResult =
   | {
       status: "found";
       product: ProductStockSummary;
@@ -19,6 +19,9 @@ export type BarcodeLookupResult =
   | {
       status: "duplicate";
     };
+
+export type BarcodeLookupResult = ProductIdentifierLookupResult;
+export type QrCodeLookupResult = ProductIdentifierLookupResult;
 
 export interface CreateStockTransactionInput {
   product_id: number;

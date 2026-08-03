@@ -1,10 +1,14 @@
 import {
+  useCallback,
   useEffect,
   useRef,
   useState,
   type FormEvent,
   type KeyboardEvent,
 } from "react";
+import CameraScanner, {
+  type CameraScanKind,
+} from "./CameraScanner";
 import type {
   ProductStockSummary,
   StockTransactionType,
@@ -13,6 +17,7 @@ import {
   createStockTransaction,
   getProductsWithStock,
   lookupProductByBarcode,
+  lookupProductByQrCode,
 } from "../../services/stockTransactionService";
 
 type StockTransactionFormProps = {
@@ -66,6 +71,7 @@ function StockTransactionForm({ mode }: StockTransactionFormProps) {
   const [selectedProduct, setSelectedProduct] =
     useState<ProductStockSummary | null>(null);
   const [barcode, setBarcode] = useState("");
+  const [cameraOpen, setCameraOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [quantity, setQuantity] = useState("");
   const [reference, setReference] = useState("");
@@ -76,6 +82,7 @@ function StockTransactionForm({ mode }: StockTransactionFormProps) {
   const [loadError, setLoadError] = useState("");
   const [message, setMessage] = useState<VisibleMessage | null>(null);
   const barcodeInputRef = useRef<HTMLInputElement>(null);
+  const cameraScanHandledRef = useRef(false);
 
   useEffect(() => {
     loadProducts();
@@ -168,10 +175,64 @@ function StockTransactionForm({ mode }: StockTransactionFormProps) {
     void handleBarcodeLookup();
   }
 
+  const handleCameraScan = useCallback(
+    async (value: string, kind: CameraScanKind) => {
+      if (cameraScanHandledRef.current) return;
+
+      cameraScanHandledRef.current = true;
+      setCameraOpen(false);
+      setBarcode(value);
+      setSelectedProduct(null);
+      setIsLookingUpBarcode(true);
+      setMessage(null);
+
+      try {
+        let result = kind === "qr"
+          ? await lookupProductByQrCode(value)
+          : await lookupProductByBarcode(value);
+        let matchedIdentifier = kind === "qr" ? "QR Code" : "Barcode";
+
+        if (kind === "qr" && result.status === "not_found") {
+          result = await lookupProductByBarcode(value);
+          matchedIdentifier = "Barcode";
+        }
+
+        if (result.status === "not_found") {
+          setMessage({
+            type: "error",
+            text: kind === "qr"
+              ? "Barcode or QR Code not found."
+              : "Barcode not found.",
+          });
+          return;
+        }
+
+        if (result.status === "duplicate") {
+          setMessage({
+            type: "error",
+            text: `Multiple products use this ${matchedIdentifier}. Please select the product manually.`,
+          });
+          return;
+        }
+
+        setSelectedProduct(result.product);
+      } catch (error) {
+        console.error(error);
+        setMessage({
+          type: "error",
+          text: "Cannot look up the scanned code. Please check your connection and try again.",
+        });
+      } finally {
+        setIsLookingUpBarcode(false);
+      }
+    },
+    [],
+  );
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (isSubmitting || isLookingUpBarcode) return;
+    if (isSubmitting || isLookingUpBarcode || cameraOpen) return;
 
     setMessage(null);
 
@@ -259,7 +320,7 @@ function StockTransactionForm({ mode }: StockTransactionFormProps) {
           <label className="mb-2 block text-sm font-medium">
             Barcode
           </label>
-          <div className="flex gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row">
             <input
               ref={barcodeInputRef}
               type="text"
@@ -268,7 +329,7 @@ function StockTransactionForm({ mode }: StockTransactionFormProps) {
               onKeyDown={handleBarcodeKeyDown}
               disabled={isLookingUpBarcode || isSubmitting}
               placeholder="Scan or type Barcode, then press Enter"
-              className="w-full rounded-lg border border-gray-300 p-3 disabled:bg-gray-100"
+              className="min-w-0 w-full rounded-lg border border-gray-300 p-3 disabled:bg-gray-100"
             />
             <button
               type="button"
@@ -277,6 +338,18 @@ function StockTransactionForm({ mode }: StockTransactionFormProps) {
               className="rounded-lg bg-blue-600 px-5 py-3 text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isLookingUpBarcode ? "Looking up..." : "Find"}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMessage(null);
+                cameraScanHandledRef.current = false;
+                setCameraOpen(true);
+              }}
+              disabled={isLookingUpBarcode || isSubmitting}
+              className="whitespace-nowrap rounded-lg bg-slate-700 px-5 py-3 text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Scan Camera
             </button>
             {barcode && (
               <button
@@ -465,6 +538,14 @@ function StockTransactionForm({ mode }: StockTransactionFormProps) {
           </button>
         </div>
       </form>
+
+      {cameraOpen && (
+        <CameraScanner
+          open
+          onScan={handleCameraScan}
+          onClose={() => setCameraOpen(false)}
+        />
+      )}
     </div>
   );
 }

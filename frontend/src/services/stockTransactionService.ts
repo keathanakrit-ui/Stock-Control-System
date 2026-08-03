@@ -1,4 +1,5 @@
 import { supabase } from "../lib/supabase";
+import { getProducts } from "./productService";
 import type {
   CreateStockTransactionInput,
   ProductStockSummary,
@@ -8,18 +9,8 @@ import type {
   StockTransactionType,
 } from "../models/stockTransaction";
 
-type RawProductStockSummary = Omit<
-  ProductStockSummary,
-  | "id"
-  | "product_id"
-  | "min_qty"
-  | "max_qty"
-  | "current_qty"
-  | "last_movement_at"
-> & {
+type RawProductStockSummary = {
   product_id: unknown;
-  min_qty: unknown;
-  max_qty: unknown;
   current_qty: unknown;
   last_movement_at: unknown;
 };
@@ -104,28 +95,46 @@ function normalizeOptionalTransactionDate(value: unknown): string | null {
 }
 
 export async function getProductsWithStock(): Promise<ProductStockSummary[]> {
-  const { data, error } = await supabase
-    .from("product_stock_summary")
-    .select("*")
-    .order("product_code", { ascending: true });
+  const [products, summaryResult] = await Promise.all([
+    getProducts(),
+    supabase
+      .from("product_stock_summary")
+      .select("product_id, current_qty, last_movement_at"),
+  ]);
 
-  if (error) {
-    throw error;
+  if (summaryResult.error) {
+    throw summaryResult.error;
   }
 
-  const rows = (data ?? []) as RawProductStockSummary[];
+  const rows = (summaryResult.data ?? []) as RawProductStockSummary[];
+  const summaries = new Map(
+    rows.map((row) => {
+      const productId = normalizeNumber(row.product_id, "product_id");
 
-  return rows.map((row) => ({
-    ...row,
-    id: normalizeNumber(row.product_id, "product_id"),
-    product_id: normalizeNumber(row.product_id, "product_id"),
-    min_qty: normalizeNumber(row.min_qty, "min_qty"),
-    max_qty: normalizeNumber(row.max_qty, "max_qty"),
-    current_qty: normalizeNumber(row.current_qty, "current_qty"),
-    last_movement_at: normalizeOptionalTransactionDate(
-      row.last_movement_at,
-    ),
-  }));
+      return [
+        productId,
+        {
+          current_qty: normalizeNumber(row.current_qty, "current_qty"),
+          last_movement_at: normalizeOptionalTransactionDate(
+            row.last_movement_at,
+          ),
+        },
+      ];
+    }),
+  );
+
+  return products
+    .map((product) => {
+      const summary = summaries.get(product.id);
+
+      return {
+        ...product,
+        product_id: product.id,
+        current_qty: summary?.current_qty ?? 0,
+        last_movement_at: summary?.last_movement_at ?? null,
+      };
+    })
+    .sort((a, b) => a.product_code.localeCompare(b.product_code));
 }
 
 export async function createStockTransaction(

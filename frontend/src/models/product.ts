@@ -9,8 +9,17 @@ export interface Product {
 
   min_qty: number;
   max_qty: number;
+
+  size: string | null;
+  color: string | null;
+  location: string | null;
+  barcode: string | null;
+  qr_code: string | null;
+  brand: string | null;
+  supplier: string | null;
+  image_url: string | null;
 }
 
-export type ProductInput = Omit<Product, "id">;
-export type CreateProductInput = ProductInput;
-export type UpdateProductInput = ProductInput;
+export type CreateProductInput = Omit<Product, "id">;
+export type UpdateProductInput = Omit<Product, "id">;
+export type ProductInput = CreateProductInput;

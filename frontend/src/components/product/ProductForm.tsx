@@ -24,6 +24,14 @@ function ProductForm({
   const [unit, setUnit] = useState(product?.unit ?? "PCS");
   const [minQty, setMinQty] = useState(String(product?.min_qty ?? 0));
   const [maxQty, setMaxQty] = useState(String(product?.max_qty ?? 0));
+  const [size, setSize] = useState(product?.size ?? "");
+  const [color, setColor] = useState(product?.color ?? "");
+  const [location, setLocation] = useState(product?.location ?? "");
+  const [barcode, setBarcode] = useState(product?.barcode ?? "");
+  const [qrCode, setQrCode] = useState(product?.qr_code ?? "");
+  const [brand, setBrand] = useState(product?.brand ?? "");
+  const [supplier, setSupplier] = useState(product?.supplier ?? "");
+  const [imageUrl, setImageUrl] = useState(product?.image_url ?? "");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!open) return null;
@@ -37,6 +45,7 @@ function ProductForm({
     const trimmedName = productName.trim();
     const parsedMinQty = Number(minQty);
     const parsedMaxQty = Number(maxQty);
+    const quantityPattern = /^\d+(?:\.\d{1,3})?$/;
 
     if (!trimmedCode) {
       alert("Please enter Product Code");
@@ -51,10 +60,14 @@ function ProductForm({
     if (
       !Number.isFinite(parsedMinQty)
       || !Number.isFinite(parsedMaxQty)
+      || !quantityPattern.test(minQty.trim())
+      || !quantityPattern.test(maxQty.trim())
       || parsedMinQty < 0
       || parsedMaxQty < 0
     ) {
-      alert("Min Qty and Max Qty must be valid non-negative numbers");
+      alert(
+        "Min Qty and Max Qty must be non-negative numbers with up to 3 decimal places",
+      );
       return;
     }
 
@@ -70,6 +83,14 @@ function ProductForm({
       unit,
       min_qty: parsedMinQty,
       max_qty: parsedMaxQty,
+      size: size.trim() || null,
+      color: color.trim() || null,
+      location: location.trim() || null,
+      barcode: barcode.trim() || null,
+      qr_code: qrCode.trim() || null,
+      brand: brand.trim() || null,
+      supplier: supplier.trim() || null,
+      image_url: imageUrl.trim() || null,
     };
 
     try {
@@ -95,7 +116,7 @@ function ProductForm({
     <div className="fixed inset-0 flex items-center justify-center bg-black/40">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-2xl rounded-xl bg-white p-6 shadow-xl"
+        className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl"
       >
         <div className="mb-6 flex items-center justify-between">
           <h2 className="text-2xl font-bold">
@@ -177,6 +198,7 @@ function ProductForm({
             <input
               type="number"
               min="0"
+              step="0.001"
               value={minQty}
               onChange={(event) => setMinQty(event.target.value)}
               className="w-full rounded-lg border p-3"
@@ -188,10 +210,51 @@ function ProductForm({
             <input
               type="number"
               min="0"
+              step="0.001"
               value={maxQty}
               onChange={(event) => setMaxQty(event.target.value)}
               className="w-full rounded-lg border p-3"
             />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium">Size</label>
+            <input type="text" value={size} onChange={(event) => setSize(event.target.value)} className="w-full rounded-lg border p-3" />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium">Color</label>
+            <input type="text" value={color} onChange={(event) => setColor(event.target.value)} className="w-full rounded-lg border p-3" />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium">Location</label>
+            <input type="text" value={location} onChange={(event) => setLocation(event.target.value)} className="w-full rounded-lg border p-3" />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium">Barcode</label>
+            <input type="text" value={barcode} onChange={(event) => setBarcode(event.target.value)} className="w-full rounded-lg border p-3" />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium">QR Code</label>
+            <input type="text" value={qrCode} onChange={(event) => setQrCode(event.target.value)} className="w-full rounded-lg border p-3" />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium">Brand</label>
+            <input type="text" value={brand} onChange={(event) => setBrand(event.target.value)} className="w-full rounded-lg border p-3" />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium">Supplier</label>
+            <input type="text" value={supplier} onChange={(event) => setSupplier(event.target.value)} className="w-full rounded-lg border p-3" />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium">Image URL</label>
+            <input type="url" value={imageUrl} onChange={(event) => setImageUrl(event.target.value)} className="w-full rounded-lg border p-3" placeholder="https://example.com/image.jpg" />
           </div>
         </div>
 

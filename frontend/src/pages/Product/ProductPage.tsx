@@ -66,7 +66,8 @@ function ProductPage() {
   const filteredProducts = products.filter(
     (product) =>
       product.product_code.toLowerCase().includes(normalizedSearch)
-      || product.product_name.toLowerCase().includes(normalizedSearch),
+      || product.product_name.toLowerCase().includes(normalizedSearch)
+      || product.barcode?.toLowerCase().includes(normalizedSearch),
   );
 
   return (
@@ -79,7 +80,7 @@ function ProductPage() {
             type="text"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search Product Code or Product Name..."
+            placeholder="Search Product Code, Product Name, or Barcode..."
             className="w-full rounded-lg border border-gray-300 p-3"
           />
         </div>
@@ -95,16 +96,18 @@ function ProductPage() {
         />
       </div>
 
-      <ProductForm
-        key={selectedProduct?.id ?? "new-product"}
-        open={open}
-        onClose={() => {
-          setOpen(false);
-          setSelectedProduct(null);
-        }}
-        onSuccess={loadProducts}
-        product={selectedProduct}
-      />
+      {open && (
+        <ProductForm
+          key={selectedProduct?.id ?? "new-product"}
+          open={open}
+          onClose={() => {
+            setOpen(false);
+            setSelectedProduct(null);
+          }}
+          onSuccess={loadProducts}
+          product={selectedProduct}
+        />
+      )}
     </MainLayout>
   );
 }

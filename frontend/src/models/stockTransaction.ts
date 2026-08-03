@@ -8,6 +8,18 @@ export interface ProductStockSummary extends Product {
   last_movement_at: string | null;
 }
 
+export type BarcodeLookupResult =
+  | {
+      status: "found";
+      product: ProductStockSummary;
+    }
+  | {
+      status: "not_found";
+    }
+  | {
+      status: "duplicate";
+    };
+
 export interface CreateStockTransactionInput {
   product_id: number;
   transaction_type: StockTransactionType;

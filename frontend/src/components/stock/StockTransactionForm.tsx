@@ -1,4 +1,10 @@
-import { useEffect, useState, type FormEvent } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+  type KeyboardEvent,
+} from "react";
 import type {
   ProductStockSummary,
   StockTransactionType,
@@ -6,6 +12,7 @@ import type {
 import {
   createStockTransaction,
   getProductsWithStock,
+  lookupProductByBarcode,
 } from "../../services/stockTransactionService";
 
 type StockTransactionFormProps = {
@@ -58,14 +65,17 @@ function StockTransactionForm({ mode }: StockTransactionFormProps) {
   const [products, setProducts] = useState<ProductStockSummary[]>([]);
   const [selectedProduct, setSelectedProduct] =
     useState<ProductStockSummary | null>(null);
+  const [barcode, setBarcode] = useState("");
   const [search, setSearch] = useState("");
   const [quantity, setQuantity] = useState("");
   const [reference, setReference] = useState("");
   const [note, setNote] = useState("");
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
+  const [isLookingUpBarcode, setIsLookingUpBarcode] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadError, setLoadError] = useState("");
   const [message, setMessage] = useState<VisibleMessage | null>(null);
+  const barcodeInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadProducts();
@@ -102,10 +112,66 @@ function StockTransactionForm({ mode }: StockTransactionFormProps) {
       || product.product_name.toLowerCase().includes(normalizedSearch),
   );
 
+  async function handleBarcodeLookup() {
+    if (isLookingUpBarcode) return;
+
+    const trimmedBarcode = barcode.trim();
+    setSelectedProduct(null);
+
+    if (!trimmedBarcode) {
+      setMessage({
+        type: "error",
+        text: "Enter a Barcode.",
+      });
+      return;
+    }
+
+    try {
+      setIsLookingUpBarcode(true);
+      setMessage(null);
+
+      const result = await lookupProductByBarcode(trimmedBarcode);
+
+      if (result.status === "not_found") {
+        setMessage({
+          type: "error",
+          text: "Barcode not found.",
+        });
+        return;
+      }
+
+      if (result.status === "duplicate") {
+        setMessage({
+          type: "error",
+          text: "Multiple products use this barcode. Please select the product manually.",
+        });
+        return;
+      }
+
+      setSelectedProduct(result.product);
+      setMessage(null);
+    } catch (error) {
+      console.error(error);
+      setMessage({
+        type: "error",
+        text: "Cannot look up Barcode. Please check your connection and try again.",
+      });
+    } finally {
+      setIsLookingUpBarcode(false);
+    }
+  }
+
+  function handleBarcodeKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key !== "Enter") return;
+
+    event.preventDefault();
+    void handleBarcodeLookup();
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (isSubmitting) return;
+    if (isSubmitting || isLookingUpBarcode) return;
 
     setMessage(null);
 
@@ -161,6 +227,7 @@ function StockTransactionForm({ mode }: StockTransactionFormProps) {
       setQuantity("");
       setReference("");
       setNote("");
+      setBarcode("");
 
       const refreshedProducts = await loadProducts(
         selectedProduct.product_id,
@@ -172,6 +239,8 @@ function StockTransactionForm({ mode }: StockTransactionFormProps) {
           text: `${mode === "RECEIVE" ? "Stock received" : "Stock issued"} successfully. New Current Qty: ${result.current_qty} ${selectedProduct.unit}. Product stock refresh failed; reload the page to refresh it.`,
         });
       }
+
+      window.setTimeout(() => barcodeInputRef.current?.focus(), 0);
     } catch (error) {
       console.error(error);
       setMessage({
@@ -187,6 +256,51 @@ function StockTransactionForm({ mode }: StockTransactionFormProps) {
     <div className="mt-8 rounded-xl bg-white p-6 shadow">
       <form onSubmit={handleSubmit}>
         <div>
+          <label className="mb-2 block text-sm font-medium">
+            Barcode
+          </label>
+          <div className="flex gap-3">
+            <input
+              ref={barcodeInputRef}
+              type="text"
+              value={barcode}
+              onChange={(event) => setBarcode(event.target.value)}
+              onKeyDown={handleBarcodeKeyDown}
+              disabled={isLookingUpBarcode || isSubmitting}
+              placeholder="Scan or type Barcode, then press Enter"
+              className="w-full rounded-lg border border-gray-300 p-3 disabled:bg-gray-100"
+            />
+            <button
+              type="button"
+              onClick={() => void handleBarcodeLookup()}
+              disabled={isLookingUpBarcode || isSubmitting}
+              className="rounded-lg bg-blue-600 px-5 py-3 text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isLookingUpBarcode ? "Looking up..." : "Find"}
+            </button>
+            {barcode && (
+              <button
+                type="button"
+                onClick={() => {
+                  setBarcode("");
+                  setMessage(null);
+                  barcodeInputRef.current?.focus();
+                }}
+                disabled={isLookingUpBarcode || isSubmitting}
+                className="rounded-lg border px-5 py-3 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+          {isLookingUpBarcode && (
+            <p className="mt-2 text-sm text-blue-600">
+              Looking up Barcode...
+            </p>
+          )}
+        </div>
+
+        <div className="mt-6">
           <label className="mb-2 block text-sm font-medium">
             Search Product
           </label>
@@ -334,7 +448,9 @@ function StockTransactionForm({ mode }: StockTransactionFormProps) {
         <div className="mt-6 flex justify-end">
           <button
             type="submit"
-            disabled={isSubmitting || isLoadingProducts}
+            disabled={
+              isSubmitting || isLoadingProducts || isLookingUpBarcode
+            }
             className={`rounded-lg px-5 py-3 text-white disabled:cursor-not-allowed disabled:opacity-60 ${
               mode === "RECEIVE"
                 ? "bg-green-600 hover:bg-green-700"

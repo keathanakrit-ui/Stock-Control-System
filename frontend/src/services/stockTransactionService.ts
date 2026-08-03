@@ -1,6 +1,8 @@
 import { supabase } from "../lib/supabase";
 import { getProducts } from "./productService";
+import type { Product } from "../models/product";
 import type {
+  BarcodeLookupResult,
   CreateStockTransactionInput,
   ProductStockSummary,
   StockTransactionFilters,
@@ -94,19 +96,10 @@ function normalizeOptionalTransactionDate(value: unknown): string | null {
   return normalizeTransactionDate(value);
 }
 
-export async function getProductsWithStock(): Promise<ProductStockSummary[]> {
-  const [products, summaryResult] = await Promise.all([
-    getProducts(),
-    supabase
-      .from("product_stock_summary")
-      .select("product_id, current_qty, last_movement_at"),
-  ]);
-
-  if (summaryResult.error) {
-    throw summaryResult.error;
-  }
-
-  const rows = (summaryResult.data ?? []) as RawProductStockSummary[];
+function combineProductsWithStock(
+  products: Product[],
+  rows: RawProductStockSummary[],
+): ProductStockSummary[] {
   const summaries = new Map(
     rows.map((row) => {
       const productId = normalizeNumber(row.product_id, "product_id");
@@ -123,18 +116,83 @@ export async function getProductsWithStock(): Promise<ProductStockSummary[]> {
     }),
   );
 
-  return products
-    .map((product) => {
-      const summary = summaries.get(product.id);
+  return products.map((product) => {
+    const summary = summaries.get(product.id);
 
-      return {
-        ...product,
-        product_id: product.id,
-        current_qty: summary?.current_qty ?? 0,
-        last_movement_at: summary?.last_movement_at ?? null,
-      };
-    })
+    return {
+      ...product,
+      product_id: product.id,
+      current_qty: summary?.current_qty ?? 0,
+      last_movement_at: summary?.last_movement_at ?? null,
+    };
+  });
+}
+
+export async function getProductsWithStock(): Promise<ProductStockSummary[]> {
+  const [products, summaryResult] = await Promise.all([
+    getProducts(),
+    supabase
+      .from("product_stock_summary")
+      .select("product_id, current_qty, last_movement_at"),
+  ]);
+
+  if (summaryResult.error) {
+    throw summaryResult.error;
+  }
+
+  const rows = (summaryResult.data ?? []) as RawProductStockSummary[];
+
+  return combineProductsWithStock(products, rows)
     .sort((a, b) => a.product_code.localeCompare(b.product_code));
+}
+
+export async function lookupProductByBarcode(
+  scannedBarcode: string,
+): Promise<BarcodeLookupResult> {
+  const barcode = scannedBarcode.trim();
+
+  if (!barcode) {
+    return { status: "not_found" };
+  }
+
+  const { data: productData, error: productError } = await supabase
+    .from("products")
+    .select("*")
+    .eq("barcode", barcode);
+
+  if (productError) {
+    throw productError;
+  }
+
+  const products = (productData ?? []) as Product[];
+
+  if (products.length === 0) {
+    return { status: "not_found" };
+  }
+
+  if (products.length > 1) {
+    return { status: "duplicate" };
+  }
+
+  const product = products[0];
+  const { data: summaryData, error: summaryError } = await supabase
+    .from("product_stock_summary")
+    .select("product_id, current_qty, last_movement_at")
+    .eq("product_id", product.id);
+
+  if (summaryError) {
+    throw summaryError;
+  }
+
+  const [productWithStock] = combineProductsWithStock(
+    [product],
+    (summaryData ?? []) as RawProductStockSummary[],
+  );
+
+  return {
+    status: "found",
+    product: productWithStock,
+  };
 }
 
 export async function createStockTransaction(

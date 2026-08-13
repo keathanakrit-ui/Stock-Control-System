@@ -9,8 +9,11 @@ import {
   deleteProduct,
 } from "../../services/productService";
 import { getProductsWithStock } from "../../services/stockTransactionService";
+import { useAuth } from "../../hooks/useAuth";
 
 function ProductPage() {
+  const { role } = useAuth();
+  const canManage = role === "SUPER_ADMIN" || role === "ADMIN";
   const [open, setOpen] = useState(false);
   const [products, setProducts] = useState<ProductStockSummary[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -34,6 +37,7 @@ function ProductPage() {
   }
 
   async function handleDelete(product: Product) {
+    if (!canManage) return;
     const confirmed = window.confirm(
       `Delete ${product.product_code} - ${product.product_name}?`,
     );
@@ -73,7 +77,7 @@ function ProductPage() {
   return (
     <MainLayout>
       <div>
-        <ProductToolbar onAddProduct={() => setOpen(true)} />
+        <ProductToolbar canManage={canManage} onAddProduct={() => setOpen(true)} />
 
         <div className="mt-8">
           <input
@@ -93,10 +97,11 @@ function ProductPage() {
           }}
           onDelete={handleDelete}
           deletingProductId={deletingProductId}
+          canManage={canManage}
         />
       </div>
 
-      {open && (
+      {canManage && open && (
         <ProductForm
           key={selectedProduct?.id ?? "new-product"}
           open={open}

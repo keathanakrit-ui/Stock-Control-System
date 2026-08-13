@@ -1,8 +1,9 @@
 type ProductToolbarProps = {
   onAddProduct: () => void;
+  canManage: boolean;
 };
 
-function ProductToolbar({ onAddProduct }: ProductToolbarProps) {
+function ProductToolbar({ onAddProduct, canManage }: ProductToolbarProps) {
   return (
     <div className="flex items-center justify-between">
       <div>
@@ -15,12 +16,12 @@ function ProductToolbar({ onAddProduct }: ProductToolbarProps) {
         </p>
       </div>
 
-      <button
+      {canManage && <button
         onClick={onAddProduct}
         className="rounded-lg bg-blue-600 px-5 py-3 text-white hover:bg-blue-700"
       >
         + Add Product
-      </button>
+      </button>}
     </div>
   );
 }

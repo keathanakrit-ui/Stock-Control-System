@@ -5,6 +5,7 @@ type ProductTableProps = {
   onEdit: (product: ProductStockSummary) => void;
   onDelete: (product: ProductStockSummary) => void;
   deletingProductId: number | null;
+  canManage: boolean;
 };
 
 function ProductTable({
@@ -12,6 +13,7 @@ function ProductTable({
   onEdit,
   onDelete,
   deletingProductId,
+  canManage,
 }: ProductTableProps) {
   return (
     <div className="mt-8 overflow-hidden rounded-xl bg-white shadow">
@@ -25,7 +27,7 @@ function ProductTable({
             <th className="p-4 text-left">Min Qty</th>
             <th className="p-4 text-left">Max Qty</th>
             <th className="p-4 text-left">Unit</th>
-            <th className="p-4 text-center">Action</th>
+            {canManage && <th className="p-4 text-center">Action</th>}
           </tr>
         </thead>
 
@@ -40,7 +42,7 @@ function ProductTable({
               <td className="p-4">{product.max_qty}</td>
               <td className="p-4">{product.unit}</td>
 
-              <td className="p-4 text-center">
+              {canManage && <td className="p-4 text-center">
                 <button
                   type="button"
                   onClick={() => onEdit(product)}
@@ -59,7 +61,7 @@ function ProductTable({
                 >
                   {deletingProductId === product.id ? "..." : "🗑️"}
                 </button>
-              </td>
+              </td>}
             </tr>
           ))}
         </tbody>

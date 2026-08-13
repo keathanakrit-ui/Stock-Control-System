@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 
 function Header() {
-  const { user, signOut } = useAuth();
+  const { user, role, profile, signOut } = useAuth();
   const navigate = useNavigate();
   const [isSigningOut, setIsSigningOut] = useState(false);
 
@@ -26,6 +26,8 @@ function Header() {
     <header className="flex h-16 items-center justify-between border-b bg-white px-6 shadow-sm">
       <h1 className="text-xl font-bold text-slate-700">Stock Consumption Control</h1>
       <div className="flex items-center gap-3">
+        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">{role}</span>
+        {profile?.full_name && <span className="max-w-48 truncate text-sm text-slate-700">{profile.full_name}</span>}
         <span className="max-w-64 truncate text-sm text-slate-600">{user?.email}</span>
         <button
           type="button"

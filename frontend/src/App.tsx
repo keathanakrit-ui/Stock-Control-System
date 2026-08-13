@@ -14,8 +14,8 @@ function App() {
         <Route path="/" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/products" element={<ProtectedRoute><ProductPage /></ProtectedRoute>} />
-        <Route path="/receive" element={<ProtectedRoute><ReceivePage /></ProtectedRoute>} />
-        <Route path="/issue" element={<ProtectedRoute><IssuePage /></ProtectedRoute>} />
+        <Route path="/receive" element={<ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN", "STORE"]}><ReceivePage /></ProtectedRoute>} />
+        <Route path="/issue" element={<ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN", "STORE"]}><IssuePage /></ProtectedRoute>} />
         <Route path="/transactions" element={<ProtectedRoute><TransactionPage /></ProtectedRoute>} />
       </Routes>
     </BrowserRouter>

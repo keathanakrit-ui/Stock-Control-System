@@ -47,7 +47,7 @@ Vault. The Vault value must match the Edge Function
 `NOTIFICATION_ENGINE_SECRET`; neither value belongs in migration SQL or source
 control.
 
-## STEP 33 Notification monitoring and audit (local only)
+## STEP 33 Notification monitoring and audit
 
 Each authorized engine invocation creates a row in `stock_notification_runs`
 and returns its `runId`. The run records start/completion times, terminal status,
@@ -60,3 +60,11 @@ Only the Edge Function service role can write monitoring data. Active
 authenticated roles and anonymous users cannot. Audit rows are intentionally
 not cascaded when a Product is deleted: each attempt retains immutable Product
 ID, code, and name snapshots so operational history remains understandable.
+
+## STEP 34 Notification monitoring dashboard (local only)
+
+The frontend notification monitoring page is available only to active
+`SUPER_ADMIN` and `ADMIN` users. It shows recent engine runs, delivery attempts,
+summary counts, and filters for date, run status, and stock condition. Database
+RLS remains the authoritative access control; the route and sidebar visibility
+provide an additional user-interface guard.

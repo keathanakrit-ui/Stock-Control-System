@@ -6,6 +6,7 @@ import ProductPage from "./pages/Product/ProductPage";
 import ReceivePage from "./pages/Receive/ReceivePage";
 import TransactionPage from "./pages/Transaction/TransactionPage";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import NotificationMonitoringPage from "./pages/NotificationMonitoring/NotificationMonitoringPage";
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
         <Route path="/receive" element={<ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN", "STORE"]}><ReceivePage /></ProtectedRoute>} />
         <Route path="/issue" element={<ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN", "STORE"]}><IssuePage /></ProtectedRoute>} />
         <Route path="/transactions" element={<ProtectedRoute><TransactionPage /></ProtectedRoute>} />
+        <Route path="/notification-monitoring" element={<ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN"]}><NotificationMonitoringPage /></ProtectedRoute>} />
       </Routes>
     </BrowserRouter>
   );

@@ -1,10 +1,11 @@
 import { useState, type FormEvent } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
+import { EmployeeCodeValidationError } from "../../services/authService";
 
 function LoginPage() {
   const { user, isLoading, signIn } = useAuth();
-  const [email, setEmail] = useState("");
+  const [employeeCode, setEmployeeCode] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -13,19 +14,23 @@ function LoginPage() {
     event.preventDefault();
     if (isSubmitting) return;
 
-    const trimmedEmail = email.trim();
-    if (!trimmedEmail || !password) {
-      setErrorMessage("Please enter your email and password.");
+    const trimmedEmployeeCode = employeeCode.trim();
+    if (!trimmedEmployeeCode || !password) {
+      setErrorMessage("Please enter your employee ID and password.");
       return;
     }
 
     try {
       setIsSubmitting(true);
       setErrorMessage("");
-      await signIn(trimmedEmail, password);
+      await signIn(trimmedEmployeeCode, password);
     } catch (error) {
       console.error("Supabase sign-in failed", error);
-      setErrorMessage("Sign in failed. Check your email and password, then try again.");
+      setErrorMessage(
+        error instanceof EmployeeCodeValidationError
+          ? error.message
+          : "Sign in failed. Check your employee ID and password, then try again.",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -44,15 +49,18 @@ function LoginPage() {
         <p className="mt-2 text-center text-gray-500">Sign in to continue</p>
 
         <div className="mt-6">
-          <label className="block text-sm font-medium">Email</label>
+          <label htmlFor="employee-code" className="block text-sm font-medium">Employee ID</label>
           <input
-            type="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            autoComplete="email"
+            id="employee-code"
+            type="text"
+            value={employeeCode}
+            onChange={(event) => setEmployeeCode(event.target.value)}
+            autoComplete="username"
+            autoCapitalize="characters"
+            spellCheck={false}
             disabled={isSubmitting}
             className="mt-2 w-full rounded-lg border p-3"
-            placeholder="name@example.com"
+            placeholder="EMP001"
           />
         </div>
 

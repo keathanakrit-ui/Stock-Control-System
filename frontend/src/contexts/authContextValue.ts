@@ -10,7 +10,7 @@ export type AuthContextValue = {
   active: boolean;
   isLoading: boolean;
   accessError: string | null;
-  signIn: (email: string, password: string) => Promise<void>;
+  signIn: (employeeCode: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 };
 

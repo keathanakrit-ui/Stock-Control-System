@@ -60,8 +60,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     active: profile?.active === true,
     isLoading,
     accessError,
-    async signIn(email, password) {
-      await signInWithPasswordRequest(email, password);
+    async signIn(employeeCode, password) {
+      await signInWithPasswordRequest(employeeCode, password);
     },
     async signOut() {
       await signOutRequest();

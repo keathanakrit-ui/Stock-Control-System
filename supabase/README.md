@@ -46,3 +46,17 @@ The production Cron job is named
 Vault. The Vault value must match the Edge Function
 `NOTIFICATION_ENGINE_SECRET`; neither value belongs in migration SQL or source
 control.
+
+## STEP 33 Notification monitoring and audit (local only)
+
+Each authorized engine invocation creates a row in `stock_notification_runs`
+and returns its `runId`. The run records start/completion times, terminal status,
+product and delivery counts, and a bounded failure summary. Every claimed item
+that reaches LINE delivery also creates an append-only row in
+`stock_notification_delivery_attempts`.
+
+Only the Edge Function service role can write monitoring data. Active
+`SUPER_ADMIN` and `ADMIN` users may read both audit tables through RLS; other
+authenticated roles and anonymous users cannot. Audit rows are intentionally
+not cascaded when a Product is deleted: each attempt retains immutable Product
+ID, code, and name snapshots so operational history remains understandable.

@@ -8,6 +8,7 @@ import TransactionPage from "./pages/Transaction/TransactionPage";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import NotificationMonitoringPage from "./pages/NotificationMonitoring/NotificationMonitoringPage";
 import AddUserPage from "./pages/UserManagement/AddUserPage";
+import ManageUsersPage from "./pages/UserManagement/ManageUsersPage";
 import ForgotPasswordPage from "./pages/Login/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/Login/ResetPasswordPage";
 
@@ -25,6 +26,7 @@ function App() {
         <Route path="/transactions" element={<ProtectedRoute><TransactionPage /></ProtectedRoute>} />
         <Route path="/notification-monitoring" element={<ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN"]}><NotificationMonitoringPage /></ProtectedRoute>} />
         <Route path="/users/add" element={<ProtectedRoute allowedRoles={["SUPER_ADMIN"]}><AddUserPage /></ProtectedRoute>} />
+        <Route path="/users" element={<ProtectedRoute allowedRoles={["SUPER_ADMIN"]}><ManageUsersPage /></ProtectedRoute>} />
       </Routes>
     </BrowserRouter>
   );

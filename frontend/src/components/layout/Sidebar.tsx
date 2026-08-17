@@ -19,6 +19,7 @@ function Sidebar() {
         {canIssueStock && <NavLink to="/issue" className={linkClass}>Issue</NavLink>}
         <NavLink to="/transactions" className={linkClass}>Transactions</NavLink>
         {canMonitorNotifications && <NavLink to="/notification-monitoring" className={linkClass}>Notification Monitoring</NavLink>}
+        {role === "SUPER_ADMIN" && <NavLink to="/users" className={linkClass}>Manage Users</NavLink>}
         {role === "SUPER_ADMIN" && <NavLink to="/users/add" className={linkClass}>Add User</NavLink>}
       </nav>
     </aside>

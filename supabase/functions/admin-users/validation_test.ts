@@ -1,6 +1,8 @@
 import {
   InputValidationError,
   validateCreateEmployeeUser,
+  validateResetEmployeePassword,
+  validateUpdateEmployeeUser,
 } from "./validation.ts";
 
 Deno.test("normalizes a valid employee account", () => {
@@ -56,4 +58,40 @@ Deno.test("rejects elevated and malformed input", () => {
       if (!(error instanceof InputValidationError)) throw error;
     }
   }
+});
+
+Deno.test("validates managed employee updates", () => {
+  const result = validateUpdateEmployeeUser({
+    userId: "94c0d958-552c-4eb9-a9b4-558f531879d7",
+    fullName: " Store Employee ",
+    role: "STORE",
+    active: false,
+  });
+
+  if (result.fullName !== "Store Employee") {
+    throw new Error("name not normalized");
+  }
+  if (result.role !== "STORE") throw new Error("role not retained");
+  if (result.active !== false) throw new Error("active status not retained");
+});
+
+Deno.test("validates password resets and rejects invalid targets", () => {
+  const reset = validateResetEmployeePassword({
+    userId: "94c0d958-552c-4eb9-a9b4-558f531879d7",
+    password: "temporary-password",
+  });
+  if (reset.userId !== "94c0d958-552c-4eb9-a9b4-558f531879d7") {
+    throw new Error("user ID not retained");
+  }
+
+  let rejected = false;
+  try {
+    validateResetEmployeePassword({
+      userId: "not-a-user-id",
+      password: "temporary-password",
+    });
+  } catch (error) {
+    rejected = error instanceof InputValidationError;
+  }
+  if (!rejected) throw new Error("invalid user ID accepted");
 });

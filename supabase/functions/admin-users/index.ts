@@ -1,7 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
 import {
   InputValidationError,
+  MANAGED_ROLES,
   validateCreateEmployeeUser,
+  validateResetEmployeePassword,
+  validateUpdateEmployeeUser,
 } from "./validation.ts";
 
 const EMPLOYEE_AUTH_DOMAIN = "staff.stock-control.internal";
@@ -89,9 +92,180 @@ Deno.serve(async (request) => {
     return response(request, { error: "Forbidden" }, 403);
   }
 
+  let requestBody: Record<string, unknown>;
+  try {
+    const parsed = await request.json();
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      throw new Error("Invalid request body");
+    }
+    requestBody = parsed as Record<string, unknown>;
+  } catch {
+    return response(request, { error: "Invalid request body" }, 400);
+  }
+
+  if (requestBody.action === "list") {
+    const { data: authData, error: listError } = await admin.auth.admin
+      .listUsers({ page: 1, perPage: 1000 });
+    if (listError) {
+      console.error("Unable to list employee auth users", listError.message);
+      return response(
+        request,
+        { error: "Unable to load employee accounts." },
+        500,
+      );
+    }
+
+    const employeeAuthUsers = authData.users.filter((user) =>
+      user.email?.toLowerCase().endsWith(`@${EMPLOYEE_AUTH_DOMAIN}`)
+    );
+    if (employeeAuthUsers.length === 0) {
+      return response(request, { users: [] }, 200);
+    }
+
+    const { data: profiles, error: profilesError } = await admin
+      .from("profiles")
+      .select("id, full_name, role, active")
+      .in("id", employeeAuthUsers.map((user) => user.id));
+    if (profilesError) {
+      console.error("Unable to list employee profiles", profilesError.message);
+      return response(
+        request,
+        { error: "Unable to load employee accounts." },
+        500,
+      );
+    }
+
+    const profilesById = new Map(
+      (profiles ?? []).map((profile) => [profile.id, profile]),
+    );
+    const users = employeeAuthUsers.flatMap((user) => {
+      const profile = profilesById.get(user.id);
+      if (
+        !profile ||
+        !MANAGED_ROLES.includes(profile.role) ||
+        typeof profile.full_name !== "string"
+      ) return [];
+
+      return [{
+        id: user.id,
+        employeeCode: user.email!.slice(0, -(`@${EMPLOYEE_AUTH_DOMAIN}`).length)
+          .toUpperCase(),
+        fullName: profile.full_name,
+        role: profile.role,
+        active: profile.active === true,
+        createdAt: user.created_at,
+      }];
+    }).sort((a, b) => a.employeeCode.localeCompare(b.employeeCode));
+
+    return response(request, { users }, 200);
+  }
+
+  if (requestBody.action === "update") {
+    let input;
+    try {
+      input = validateUpdateEmployeeUser(requestBody);
+    } catch (error) {
+      const message = error instanceof InputValidationError
+        ? error.message
+        : "Invalid request body";
+      return response(request, { error: message }, 400);
+    }
+
+    const { data: targetAuth, error: targetAuthError } = await admin.auth.admin
+      .getUserById(input.userId);
+    const targetEmail = targetAuth.user?.email?.toLowerCase() ?? "";
+    if (
+      targetAuthError ||
+      !targetAuth.user ||
+      !targetEmail.endsWith(`@${EMPLOYEE_AUTH_DOMAIN}`)
+    ) {
+      return response(request, { error: "Employee account not found." }, 404);
+    }
+
+    const { data: updated, error: updateError } = await admin.from("profiles")
+      .update({
+        full_name: input.fullName,
+        role: input.role,
+        active: input.active,
+      })
+      .eq("id", input.userId)
+      .in("role", [...MANAGED_ROLES])
+      .select("id")
+      .maybeSingle();
+    if (updateError || !updated) {
+      console.error(
+        "Unable to update employee profile",
+        updateError?.message ?? "Managed profile not found",
+      );
+      return response(
+        request,
+        { error: "Unable to update employee account." },
+        500,
+      );
+    }
+
+    return response(request, {
+      id: input.userId,
+      fullName: input.fullName,
+      role: input.role,
+      active: input.active,
+    }, 200);
+  }
+
+  if (requestBody.action === "resetPassword") {
+    let input;
+    try {
+      input = validateResetEmployeePassword(requestBody);
+    } catch (error) {
+      const message = error instanceof InputValidationError
+        ? error.message
+        : "Invalid request body";
+      return response(request, { error: message }, 400);
+    }
+
+    const { data: targetAuth, error: targetAuthError } = await admin.auth.admin
+      .getUserById(input.userId);
+    const targetEmail = targetAuth.user?.email?.toLowerCase() ?? "";
+    if (
+      targetAuthError ||
+      !targetAuth.user ||
+      !targetEmail.endsWith(`@${EMPLOYEE_AUTH_DOMAIN}`)
+    ) {
+      return response(request, { error: "Employee account not found." }, 404);
+    }
+
+    const { data: targetProfile, error: targetProfileError } = await admin
+      .from("profiles")
+      .select("role")
+      .eq("id", input.userId)
+      .maybeSingle();
+    if (
+      targetProfileError ||
+      !targetProfile ||
+      !MANAGED_ROLES.includes(targetProfile.role)
+    ) {
+      return response(request, { error: "Employee account not found." }, 404);
+    }
+
+    const { error: resetError } = await admin.auth.admin.updateUserById(
+      input.userId,
+      { password: input.password },
+    );
+    if (resetError) {
+      console.error("Unable to reset employee password", resetError.message);
+      return response(
+        request,
+        { error: "Unable to reset employee password." },
+        500,
+      );
+    }
+
+    return response(request, { passwordReset: true }, 200);
+  }
+
   let input;
   try {
-    input = validateCreateEmployeeUser(await request.json());
+    input = validateCreateEmployeeUser(requestBody);
   } catch (error) {
     const message = error instanceof InputValidationError
       ? error.message

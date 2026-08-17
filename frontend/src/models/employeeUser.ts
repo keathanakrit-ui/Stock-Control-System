@@ -10,3 +10,17 @@ export type CreateEmployeeUserInput = {
 };
 
 export type CreatedEmployeeUser = Omit<CreateEmployeeUserInput, "password">;
+
+export type ManagedEmployeeUser = {
+  id: string;
+  employeeCode: string;
+  fullName: string;
+  role: ManagedEmployeeRole;
+  active: boolean;
+  createdAt: string;
+};
+
+export type UpdateEmployeeUserInput = Pick<
+  ManagedEmployeeUser,
+  "id" | "fullName" | "role" | "active"
+>;

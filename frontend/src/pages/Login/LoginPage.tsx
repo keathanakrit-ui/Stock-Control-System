@@ -1,10 +1,11 @@
 import { useState, type FormEvent } from "react";
-import { Navigate } from "react-router-dom";
+import { Link, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { EmployeeCodeValidationError } from "../../services/authService";
 
 function LoginPage() {
   const { user, isLoading, signIn } = useAuth();
+  const location = useLocation();
   const [employeeCode, setEmployeeCode] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
@@ -16,7 +17,7 @@ function LoginPage() {
 
     const trimmedEmployeeCode = employeeCode.trim();
     if (!trimmedEmployeeCode || !password) {
-      setErrorMessage("Please enter your employee ID and password.");
+      setErrorMessage("Please enter your employee ID or email and password.");
       return;
     }
 
@@ -29,7 +30,7 @@ function LoginPage() {
       setErrorMessage(
         error instanceof EmployeeCodeValidationError
           ? error.message
-          : "Sign in failed. Check your employee ID and password, then try again.",
+          : "Sign in failed. Check your employee ID or email and password, then try again.",
       );
     } finally {
       setIsSubmitting(false);
@@ -47,20 +48,25 @@ function LoginPage() {
       <form onSubmit={handleSubmit} className="w-full max-w-md rounded-xl bg-white p-8 shadow-xl">
         <h1 className="text-center text-2xl font-bold">Stock Consumption Control</h1>
         <p className="mt-2 text-center text-gray-500">Sign in to continue</p>
+        {location.state?.passwordReset === true && (
+          <p className="mt-4 rounded-lg bg-emerald-50 p-3 text-center text-sm text-emerald-800" role="status">
+            Password updated. Sign in with your new password.
+          </p>
+        )}
 
         <div className="mt-6">
-          <label htmlFor="employee-code" className="block text-sm font-medium">Employee ID</label>
+          <label htmlFor="employee-code" className="block text-sm font-medium">Employee ID or Email</label>
           <input
             id="employee-code"
             type="text"
             value={employeeCode}
             onChange={(event) => setEmployeeCode(event.target.value)}
             autoComplete="username"
-            autoCapitalize="characters"
+            autoCapitalize="none"
             spellCheck={false}
             disabled={isSubmitting}
             className="mt-2 w-full rounded-lg border p-3"
-            placeholder="EMP001"
+            placeholder="EMP001 or name@example.com"
           />
         </div>
 
@@ -86,6 +92,9 @@ function LoginPage() {
         >
           {isSubmitting ? "Signing in..." : "Sign In"}
         </button>
+        <Link to="/forgot-password" className="mt-4 block text-center text-sm text-blue-600 hover:underline">
+          Forgot password?
+        </Link>
       </form>
     </div>
   );

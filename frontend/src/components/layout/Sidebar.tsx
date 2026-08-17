@@ -6,6 +6,7 @@ const linkClass = "block rounded-lg p-2 hover:bg-slate-700";
 function Sidebar() {
   const { role } = useAuth();
   const canMoveStock = role === "SUPER_ADMIN" || role === "ADMIN" || role === "STORE";
+  const canIssueStock = canMoveStock || role === "USER";
   const canMonitorNotifications = role === "SUPER_ADMIN" || role === "ADMIN";
 
   return (
@@ -15,9 +16,10 @@ function Sidebar() {
         <NavLink to="/" className={linkClass}>Dashboard</NavLink>
         <NavLink to="/products" className={linkClass}>Products</NavLink>
         {canMoveStock && <NavLink to="/receive" className={linkClass}>Receive</NavLink>}
-        {canMoveStock && <NavLink to="/issue" className={linkClass}>Issue</NavLink>}
+        {canIssueStock && <NavLink to="/issue" className={linkClass}>Issue</NavLink>}
         <NavLink to="/transactions" className={linkClass}>Transactions</NavLink>
         {canMonitorNotifications && <NavLink to="/notification-monitoring" className={linkClass}>Notification Monitoring</NavLink>}
+        {role === "SUPER_ADMIN" && <NavLink to="/users/add" className={linkClass}>Add User</NavLink>}
       </nav>
     </aside>
   );

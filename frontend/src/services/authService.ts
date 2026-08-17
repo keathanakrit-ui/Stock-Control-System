@@ -17,8 +17,21 @@ export function employeeCodeToAuthEmail(employeeCode: string): string {
   return `${normalizedCode}@${EMPLOYEE_AUTH_DOMAIN}`;
 }
 
-export async function signInWithPassword(employeeCode: string, password: string) {
-  const email = employeeCodeToAuthEmail(employeeCode);
+export function loginIdentifierToAuthEmail(identifier: string): string {
+  const normalizedIdentifier = identifier.trim().toLowerCase();
+
+  if (normalizedIdentifier.includes("@")) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedIdentifier)) {
+      throw new EmployeeCodeValidationError("Please enter a valid email address.");
+    }
+    return normalizedIdentifier;
+  }
+
+  return employeeCodeToAuthEmail(normalizedIdentifier);
+}
+
+export async function signInWithPassword(identifier: string, password: string) {
+  const email = loginIdentifierToAuthEmail(identifier);
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) throw error;
@@ -29,5 +42,26 @@ export async function signInWithPassword(employeeCode: string, password: string)
 export async function signOut(): Promise<void> {
   const { error } = await supabase.auth.signOut();
 
+  if (error) throw error;
+}
+
+export async function requestPasswordReset(email: string): Promise<void> {
+  const normalizedEmail = email.trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+    throw new Error("Please enter a valid email address.");
+  }
+
+  const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
+    redirectTo: `${window.location.origin}/reset-password`,
+  });
+  if (error) throw error;
+}
+
+export async function updatePassword(password: string): Promise<void> {
+  if (password.length < 8 || password.length > 72) {
+    throw new Error("Password must be 8-72 characters.");
+  }
+
+  const { error } = await supabase.auth.updateUser({ password });
   if (error) throw error;
 }

@@ -15,3 +15,9 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/stock-notifications/deno.json"
 entrypoint = "./functions/stock-notifications/index.ts"
+
+[functions.admin-users]
+enabled = true
+verify_jwt = false
+import_map = "./functions/admin-users/deno.json"
+entrypoint = "./functions/admin-users/index.ts"

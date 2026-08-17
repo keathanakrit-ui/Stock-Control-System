@@ -68,3 +68,19 @@ The frontend notification monitoring page is available only to active
 summary counts, and filters for date, run status, and stock condition. Database
 RLS remains the authoritative access control; the route and sidebar visibility
 provide an additional user-interface guard.
+
+## STEP 35 Employee account administration (local only)
+
+The `admin-users` Edge Function creates employee accounts from an Employee ID,
+initial password, full name, role, and active status. It validates the caller's
+Supabase access token and requires an active `SUPER_ADMIN` profile before using
+the server-only service role to create the Auth user. The frontend never
+receives the service-role key or the generated internal Auth email address.
+
+Managed roles are limited to `ADMIN`, `STORE`, and `USER`; creating another
+`SUPER_ADMIN` remains an explicit dashboard/database administration action.
+
+Accounts with a real email address may use the frontend password-recovery flow.
+Supabase Auth must allow both the production and local `/reset-password` URLs.
+Employee-only accounts backed by the internal email domain require a
+`SUPER_ADMIN`-initiated password reset because that address cannot receive mail.

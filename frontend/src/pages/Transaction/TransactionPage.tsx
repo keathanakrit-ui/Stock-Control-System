@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import DatePicker from "../../components/common/DatePicker";
 import MainLayout from "../../components/layout/MainLayout";
 import TransactionTable from "../../components/stock/TransactionTable";
+import { useAuth } from "../../hooks/useAuth";
 import type {
   StockTransactionHistoryRow,
   StockTransactionTypeFilter,
@@ -9,6 +10,7 @@ import type {
 import { getStockTransactions } from "../../services/stockTransactionService";
 
 function TransactionPage() {
+  const { role } = useAuth();
   const [transactions, setTransactions] = useState<
     StockTransactionHistoryRow[]
   >([]);
@@ -19,6 +21,10 @@ function TransactionPage() {
   const [dateTo, setDateTo] = useState<Date | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [exportMessage, setExportMessage] = useState("");
+  const [isExporting, setIsExporting] = useState(false);
+  const canExport =
+    role === "SUPER_ADMIN" || role === "ADMIN" || role === "STORE";
 
   useEffect(() => {
     loadTransactions();
@@ -89,15 +95,64 @@ function TransactionPage() {
     );
   });
 
+  async function handleExport() {
+    if (
+      !canExport
+      || isExporting
+      || hasReversedDateRange
+      || filteredTransactions.length === 0
+    ) return;
+
+    try {
+      setIsExporting(true);
+      setExportMessage("");
+      const { exportTransactionReport } = await import(
+        "../../services/transactionReportService"
+      );
+      const fileName = await exportTransactionReport(filteredTransactions, {
+        search,
+        transactionType,
+        dateFrom,
+        dateTo,
+      });
+      setExportMessage(`Exported ${filteredTransactions.length} records to ${fileName}.`);
+    } catch (error) {
+      console.error(error);
+      setExportMessage("Cannot export the Excel report. Please try again.");
+    } finally {
+      setIsExporting(false);
+    }
+  }
+
   return (
     <MainLayout>
       <div>
-        <h2 className="text-3xl font-bold text-slate-800">
-          Transaction History
-        </h2>
-        <p className="mt-1 text-gray-500">
-          Review Receive and Issue stock movements
-        </p>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h2 className="text-3xl font-bold text-slate-800">
+              Transaction History
+            </h2>
+            <p className="mt-1 text-gray-500">
+              Review Receive and Issue stock movements
+            </p>
+          </div>
+          {canExport && (
+            <button
+              type="button"
+              onClick={() => void handleExport()}
+              disabled={
+                isLoading
+                || isExporting
+                || Boolean(errorMessage)
+                || hasReversedDateRange
+                || filteredTransactions.length === 0
+              }
+              className="rounded-lg bg-emerald-600 px-5 py-3 font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isExporting ? "Exporting..." : "Export Excel"}
+            </button>
+          )}
+        </div>
 
         <div className="mt-8 grid grid-cols-4 gap-4 rounded-xl bg-white p-6 shadow">
           <div>
@@ -155,6 +210,19 @@ function TransactionPage() {
             />
           </div>
         </div>
+
+        {exportMessage && (
+          <div
+            role="status"
+            className={`mt-4 rounded-lg p-3 ${
+              exportMessage.startsWith("Exported")
+                ? "bg-green-50 text-green-700"
+                : "bg-red-50 text-red-700"
+            }`}
+          >
+            {exportMessage}
+          </div>
+        )}
 
         {isLoading ? (
           <div className="mt-6 rounded-xl bg-white p-8 text-center text-gray-500 shadow">

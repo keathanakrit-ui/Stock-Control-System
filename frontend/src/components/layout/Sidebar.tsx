@@ -8,6 +8,7 @@ function Sidebar() {
   const canMoveStock = role === "SUPER_ADMIN" || role === "ADMIN" || role === "STORE";
   const canIssueStock = canMoveStock || role === "USER";
   const canMonitorNotifications = role === "SUPER_ADMIN" || role === "ADMIN";
+  const canGenerateQr = role === "SUPER_ADMIN" || role === "ADMIN";
 
   return (
     <aside className="min-h-screen w-64 bg-slate-800 p-5 text-white">
@@ -18,6 +19,7 @@ function Sidebar() {
         {canMoveStock && <NavLink to="/receive" className={linkClass}>Receive</NavLink>}
         {canIssueStock && <NavLink to="/issue" className={linkClass}>Issue</NavLink>}
         <NavLink to="/transactions" className={linkClass}>Transactions</NavLink>
+        {canGenerateQr && <NavLink to="/qr-generator" className={linkClass}>QR Generator</NavLink>}
         {canMonitorNotifications && <NavLink to="/notification-monitoring" className={linkClass}>Notification Monitoring</NavLink>}
         {role === "SUPER_ADMIN" && <NavLink to="/users" className={linkClass}>Manage Users</NavLink>}
         {role === "SUPER_ADMIN" && <NavLink to="/users/add" className={linkClass}>Add User</NavLink>}

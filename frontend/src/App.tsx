@@ -11,6 +11,7 @@ import AddUserPage from "./pages/UserManagement/AddUserPage";
 import ManageUsersPage from "./pages/UserManagement/ManageUsersPage";
 import ForgotPasswordPage from "./pages/Login/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/Login/ResetPasswordPage";
+import QrGeneratorPage from "./pages/QrGenerator/QrGeneratorPage";
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
         <Route path="/notification-monitoring" element={<ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN"]}><NotificationMonitoringPage /></ProtectedRoute>} />
         <Route path="/users/add" element={<ProtectedRoute allowedRoles={["SUPER_ADMIN"]}><AddUserPage /></ProtectedRoute>} />
         <Route path="/users" element={<ProtectedRoute allowedRoles={["SUPER_ADMIN"]}><ManageUsersPage /></ProtectedRoute>} />
+        <Route path="/qr-generator" element={<ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN"]}><QrGeneratorPage /></ProtectedRoute>} />
       </Routes>
     </BrowserRouter>
   );

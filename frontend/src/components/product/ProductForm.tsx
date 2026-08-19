@@ -18,6 +18,9 @@ type ProductModalProps = {
   product: Product | null;
 };
 
+const STANDARD_UNITS = ["PCS", "BOX", "SET", "KG", "METER"] as const;
+const CUSTOM_UNIT_VALUE = "__CUSTOM__";
+
 function ProductForm({
   open,
   onClose,
@@ -88,6 +91,7 @@ function ProductForm({
 
     const trimmedCode = productCode.trim();
     const trimmedName = productName.trim();
+    const trimmedUnit = unit.trim().toUpperCase();
     const parsedMinQty = Number(minQty);
     const parsedMaxQty = Number(maxQty);
     const quantityPattern = /^\d+(?:\.\d{1,3})?$/;
@@ -99,6 +103,11 @@ function ProductForm({
 
     if (!trimmedName) {
       alert("Please enter Product Name");
+      return;
+    }
+
+    if (!trimmedUnit) {
+      alert("Please enter Unit");
       return;
     }
 
@@ -125,7 +134,7 @@ function ProductForm({
       product_code: trimmedCode,
       product_name: trimmedName,
       category,
-      unit,
+      unit: trimmedUnit,
       min_qty: parsedMinQty,
       max_qty: parsedMaxQty,
       size: size.trim() || null,
@@ -248,8 +257,10 @@ function ProductForm({
           <div>
             <label className="mb-2 block text-sm font-medium">Unit</label>
             <select
-              value={unit}
-              onChange={(event) => setUnit(event.target.value)}
+              value={STANDARD_UNITS.includes(unit as typeof STANDARD_UNITS[number]) ? unit : CUSTOM_UNIT_VALUE}
+              onChange={(event) => {
+                setUnit(event.target.value === CUSTOM_UNIT_VALUE ? "" : event.target.value);
+              }}
               className="w-full rounded-lg border p-3"
             >
               <option>PCS</option>
@@ -257,7 +268,19 @@ function ProductForm({
               <option>SET</option>
               <option>KG</option>
               <option>METER</option>
+              <option value={CUSTOM_UNIT_VALUE}>CUSTOM</option>
             </select>
+            {!STANDARD_UNITS.includes(unit as typeof STANDARD_UNITS[number]) && (
+              <input
+                type="text"
+                value={unit}
+                onChange={(event) => setUnit(event.target.value.toUpperCase())}
+                maxLength={30}
+                className="mt-2 w-full rounded-lg border p-3"
+                placeholder="Enter custom unit, e.g. PACK"
+                aria-label="Custom unit"
+              />
+            )}
           </div>
 
           <div>

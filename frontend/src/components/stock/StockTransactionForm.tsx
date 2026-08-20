@@ -92,17 +92,18 @@ function StockTransactionForm({ mode }: StockTransactionFormProps) {
     try {
       setLoadError("");
       const data = await getProductsWithStock();
-      setProducts(data);
+      const activeProducts = data.filter((product) => product.active);
+      setProducts(activeProducts);
 
       if (selectedProductId !== undefined) {
         setSelectedProduct(
-          data.find(
+          activeProducts.find(
             (product) => product.product_id === selectedProductId,
           ) ?? null,
         );
       }
 
-      return data;
+      return activeProducts;
     } catch (error) {
       console.error(error);
       setLoadError("Cannot load Product stock. Please try again.");
@@ -314,9 +315,9 @@ function StockTransactionForm({ mode }: StockTransactionFormProps) {
   }
 
   return (
-    <div className="mt-8 rounded-xl bg-white p-6 shadow">
+    <div className="mt-5 rounded-xl bg-white p-4 shadow sm:mt-8 sm:p-6">
       <form onSubmit={handleSubmit}>
-        <div>
+        <div className={mode === "ISSUE" && selectedProduct ? "hidden sm:block" : ""}>
           <label className="mb-2 block text-sm font-medium">
             Barcode
           </label>
@@ -373,7 +374,7 @@ function StockTransactionForm({ mode }: StockTransactionFormProps) {
           )}
         </div>
 
-        <div className="mt-6">
+        <div className={`mt-6 ${mode === "ISSUE" && selectedProduct ? "hidden sm:block" : ""}`}>
           <label className="mb-2 block text-sm font-medium">
             Search Product
           </label>
@@ -386,7 +387,7 @@ function StockTransactionForm({ mode }: StockTransactionFormProps) {
           />
         </div>
 
-        <div className="mt-3 max-h-64 overflow-y-auto rounded-lg border">
+        <div className={`mt-3 max-h-64 overflow-y-auto rounded-lg border ${mode === "ISSUE" && selectedProduct ? "hidden sm:block" : ""}`}>
           {isLoadingProducts && (
             <p className="p-4 text-gray-500">Loading Products...</p>
           )}
@@ -429,7 +430,7 @@ function StockTransactionForm({ mode }: StockTransactionFormProps) {
                     setSelectedProduct(product);
                     setMessage(null);
                   }}
-                  className={`grid w-full grid-cols-4 gap-3 border-b p-3 text-left last:border-b-0 ${
+                  className={`grid w-full grid-cols-1 gap-1 border-b p-3 text-left last:border-b-0 sm:grid-cols-4 sm:gap-3 ${
                     isSelected
                       ? "bg-blue-50 ring-1 ring-inset ring-blue-500"
                       : "hover:bg-slate-50"
@@ -445,7 +446,7 @@ function StockTransactionForm({ mode }: StockTransactionFormProps) {
         </div>
 
         {selectedProduct && (
-          <div className="mt-6 rounded-lg bg-slate-100 p-4">
+          <div className="mt-6 rounded-lg border-2 border-blue-200 bg-blue-50 p-4">
             <p className="font-semibold">
               {selectedProduct.product_code} — {selectedProduct.product_name}
             </p>
@@ -460,10 +461,26 @@ function StockTransactionForm({ mode }: StockTransactionFormProps) {
               Current Qty: {selectedProduct.current_qty}{" "}
               {selectedProduct.unit}
             </p>
+            {mode === "ISSUE" && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedProduct(null);
+                  setBarcode("");
+                  setQuantity("");
+                  setMessage(null);
+                  window.setTimeout(() => barcodeInputRef.current?.focus(), 0);
+                }}
+                disabled={isSubmitting}
+                className="mt-4 w-full rounded-lg border border-blue-300 bg-white px-4 py-3 font-medium text-blue-700 sm:hidden"
+              >
+                Change Product / Scan Again
+              </button>
+            )}
           </div>
         )}
 
-        <div className="mt-6 grid grid-cols-2 gap-4">
+        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label className="mb-2 block text-sm font-medium">
               {mode === "RECEIVE" ? "Received Quantity" : "Issue Quantity"}
@@ -524,7 +541,7 @@ function StockTransactionForm({ mode }: StockTransactionFormProps) {
             disabled={
               isSubmitting || isLoadingProducts || isLookingUpBarcode
             }
-            className={`rounded-lg px-5 py-3 text-white disabled:cursor-not-allowed disabled:opacity-60 ${
+            className={`w-full rounded-lg px-5 py-4 text-base font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:py-3 ${
               mode === "RECEIVE"
                 ? "bg-green-600 hover:bg-green-700"
                 : "bg-orange-600 hover:bg-orange-700"

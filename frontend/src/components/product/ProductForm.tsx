@@ -40,6 +40,7 @@ function ProductForm({
   const [qrCode, setQrCode] = useState(product?.qr_code ?? "");
   const [brand, setBrand] = useState(product?.brand ?? "");
   const [supplier, setSupplier] = useState(product?.supplier ?? "");
+  const [active, setActive] = useState(product?.active ?? true);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [localPreviewUrl, setLocalPreviewUrl] = useState("");
   const [imageError, setImageError] = useState("");
@@ -145,6 +146,7 @@ function ProductForm({
       brand: brand.trim() || null,
       supplier: supplier.trim() || null,
       image_url: product?.image_url ?? null,
+      active,
     };
 
     let operation: "upload" | "save" = "save";
@@ -340,6 +342,24 @@ function ProductForm({
           <div>
             <label className="mb-2 block text-sm font-medium">Supplier</label>
             <input type="text" value={supplier} onChange={(event) => setSupplier(event.target.value)} className="w-full rounded-lg border p-3" />
+          </div>
+
+          <div className="col-span-2">
+            <label className="flex items-center gap-3 rounded-lg border p-4">
+              <input
+                type="checkbox"
+                checked={active}
+                onChange={(event) => setActive(event.target.checked)}
+                disabled={isSubmitting}
+                className="h-5 w-5"
+              />
+              <span>
+                <span className="block font-medium">Product is active</span>
+                <span className="block text-xs text-slate-500">
+                  Inactive products cannot be selected for Receive or Issue.
+                </span>
+              </span>
+            </label>
           </div>
 
           <div className="col-span-2">

@@ -113,7 +113,7 @@ Deno.serve(async (request) => {
   try {
     const { data, error } = await supabase.from("product_stock_summary").select(
       "product_id,product_code,product_name,unit,min_qty,max_qty,current_qty,last_movement_at",
-    );
+    ).eq("active", true);
     if (error) {
       throw new Error(`Unable to read stock summary: ${error.message}`);
     }

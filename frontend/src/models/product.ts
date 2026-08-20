@@ -18,6 +18,7 @@ export interface Product {
   brand: string | null;
   supplier: string | null;
   image_url: string | null;
+  active: boolean;
 }
 
 export type CreateProductInput = Omit<Product, "id">;

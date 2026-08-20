@@ -161,7 +161,8 @@ async function lookupProductByIdentifier(
   const { data: productData, error: productError } = await supabase
     .from("products")
     .select("*")
-    .eq(column, identifier);
+    .eq(column, identifier)
+    .eq("active", true);
 
   if (productError) {
     throw productError;

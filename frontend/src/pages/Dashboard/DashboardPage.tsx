@@ -19,7 +19,7 @@ function DashboardPage() {
     try {
       setErrorMessage("");
       const data = await getProductsWithStock();
-      setProducts(data);
+      setProducts(data.filter((product) => product.active));
     } catch (error) {
       console.error(error);
       setErrorMessage("Cannot load stock monitoring data. Please try again.");

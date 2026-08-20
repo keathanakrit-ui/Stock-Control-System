@@ -13,7 +13,7 @@ function MainLayout({ children }: MainLayoutProps) {
       <div className="flex flex-1 flex-col">
         <Header />
 
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-4 pb-24 md:p-6 md:pb-6">
           {children}
         </main>
       </div>

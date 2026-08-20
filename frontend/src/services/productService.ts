@@ -61,3 +61,18 @@ export async function deleteProduct(id: number): Promise<void> {
     throw error;
   }
 }
+
+export async function setProductActive(
+  id: number,
+  active: boolean,
+): Promise<Product> {
+  const { data, error } = await supabase
+    .from("products")
+    .update({ active })
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
